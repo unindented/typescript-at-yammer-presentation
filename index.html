@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica,
+          Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+        line-height: 1.5;
+      }
+      blockquote {
+        border-inline-start: 5px solid;
+        padding-inline-start: 10px;
+        text-align: initial;
+      }
+      img {
+        width: auto;
+        max-height: 65vh;
+      }
+      ol, ul {
+        text-align: initial;
+      }
+      pre {
+        line-height: 1.15;
+      }
+      .remark-code,
+      .remark-inline-code {
+        font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+        text-align: initial;
+      }
+      .emoji {
+        font-size: 400%;
+      }
+      .inverse {
+        background: #000;
+        color: #fff;
+      }
+      .inverse h1,
+      .inverse h2,
+      .inverse h3 {
+        color: #ffa700;
+      }
+      .inverse a {
+        color: #ffa700;
+      }
+      .inverse blockquote {
+        border-color: #ffa700;
+      }
+      .inverse .remark-code-line-highlighted {
+        background-color: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+name: template
+layout: true
+class: center, middle, inverse
+
+---
+
+# TypeScript brownbag
+
+Daniel Perez Alvarez
+
+Frontend @ Yammer
+
+---
+
+## TypeScript at Yammer
+
+---
+
+### Legacy web client
+
+![Legacy Yammer](./legacy.png)
+
+---
+
+```sh
+$ cloc --exclude-dir=vendor .
+
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+HTML                          2298           2572             30         547744
+JavaScript                    1537          34525           9687         191431
+TypeScript                    1852          25461           2034         146556
+JSON                           118              2              0          66911
+CSS                            605           5671           1850          42726
+JSX                              5            480            236           2340
+SVG                            346             18             38           2119
+Markdown                        11            438              0           1014
+GraphQL                         30             31             97            729
+Bourne Shell                     7             70             57            225
+YAML                             4              1              2            189
+XML                              1              0              0             34
+Dockerfile                       1              8              3             15
+EJS                              1              2              0              8
+-------------------------------------------------------------------------------
+SUM:                          6816          69279          14034        1002041
+-------------------------------------------------------------------------------
+```
+
+---
+
+### New web client
+
+![New Yammer](./new.png)
+
+---
+
+```sh
+$ cloc --fullpath --not-match-d=projects/yammer-data/src/graphql/types .
+
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+JSON                          1965             40              0         296417
+TypeScript                    6235          51702           3826         262085
+Markdown                       102           1866              0           3610
+JavaScript                     140            255            587           3489
+GraphQL                        130            148            176           2150
+SVG                            159              0              0            461
+HTML                             4             16              0            170
+EJS                              7             22              0            127
+-------------------------------------------------------------------------------
+SUM:                          8742          54049           4589         568509
+-------------------------------------------------------------------------------
+```
+
+---
+
+### Electron client
+
+![Desktop Yammer](./desktop.png)
+
+---
+
+```sh
+$ cloc .
+
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+JSON                            14              0              0          16412
+TypeScript                     215           1807            349           9587
+JavaScript                      16            134            140            653
+Markdown                         1            167              0            323
+SVG                              5              0              5            205
+CSS                              3             15              0            118
+HTML                             2             10              0             75
+XML                              1              0              0             41
+-------------------------------------------------------------------------------
+SUM:                           257           2133            494          27414
+-------------------------------------------------------------------------------
+```
+
+---
+
+## Would we do it again?
+
+.emoji[💯]
+
+---
+
+### Learnings
+
+* Make sure everybody on your team is on the same page (beware of JavaScript fatigue)
+* TypeScript has a ton of features, learn as much as you can before you start writing code
+* Converting a large codebase takes a lot of effort
+* You may not see much benefit until you convert large chunks of your codebase
+* If you're serious about TypeScript, avoid any features that relax type checking
+* TypeScript makes it much easier to navigate a codebase
+* TypeScript catches a ton of mistakes
+
+---
+
+## Tooling
+
+.emoji[🛠]
+
+---
+
+### Linting
+
+~~`tslint`~~ [`eslint`](https://eslint.org/) + [`typescript-eslint`](https://github.com/typescript-eslint/typescript-eslint)
+
+> ⚠️ __TSLint is deprecated.__
+>
+> See this issue for more details: [Roadmap: TSLint &rarr; ESLint](https://github.com/palantir/tslint/issues/4534). If you're interested in helping with the TSLint/ESLint migration, please check out our [OSS Fellowship](https://medium.com/palantir/fellowships-for-open-source-developers-3892e6b75ee1) program.
+
+---
+
+```javascript
+// .eslintrc
+
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "ecmaFeatures": { "jsx": true }
+  }
+}
+```
+
+---
+
+### Testing
+
+[`jest`](https://eslint.org/) + ([`ts-jest`]() | [`babel-jest`]())
+
+---
+
+#### `ts-jest`
+
+```sh
+npm install --save-dev ts-jest
+```
+
+```js
+// jest.config.js
+
+module.exports = {
+  preset: 'ts-jest'
+};
+```
+
+---
+
+#### `babel-jest`
+
+```sh
+npm install --save-dev babel-jest
+```
+
+```js
+// babel.config.js
+
+module.exports = api => {
+  const targets = api.env('test') ? { node: 'current' } : '> 1%, last 2 versions, IE 11';
+
+  const presets = [
+    ['@babel/preset-env', { targets }],
+    '@babel/preset-react',
+    '@babel/preset-typescript'
+  ];
+  const plugins = [
+    '@babel/plugin-proposal-class-properties',
+    '@babel/plugin-proposal-object-rest-spread'
+  ];
+
+  return {
+    presets,
+    plugins,
+  };
+};
+```
+
+---
+
+### Bundling
+
+[`webpack`](https://webpack.js.org/) + ([`ts-loader`](https://github.com/TypeStrong/ts-loader) | [`babel-loader`](https://github.com/babel/babel-loader))
+
+---
+
+#### `ts-loader`
+
+```sh
+npm install --save-dev ts-loader
+```
+
+```js
+// webpack.config.js
+
+module.exports = () => ({
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        include: src,
+        use: {
+          loader: 'ts-loader',
+          options: {
+            transpileOnly: true,
+          }
+        }
+      }
+    ]
+  },
+  plugins: [
+    new ForkTsCheckerPlugin(),
+  ]
+}
+```
+
+---
+
+#### `babel-loader`
+
+```sh
+npm install --save-dev \
+  @babel/core \
+  @babel/plugin-proposal-class-properties \
+  @babel/plugin-proposal-object-rest-spread \
+  @babel/preset-env \
+  @babel/preset-react \
+  @babel/preset-typescript \
+  babel-loader
+```
+
+```js
+// webpack.config.js
+
+module.exports = () => ({
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        include: src,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## Best practices
+
+.emoji[🌈]
+
+---
+
+### Avoid `any`
+
+```typescript
+const foo = (bar: string): any => ({ baz: 'baz' })
+
+const qux = foo('bar');
+*console.log(qux.bazz);
+// undefined
+```
+
+[Playground](https://www.typescriptlang.org/play/index.html#code/MYewdgzgLgBAZiEMC8MAUAjAhgJwFwzQ4CWYA5gJQFZgCeKAfOgN4zYBeBA5B1zAL4UAUENCRYARwCuADxTxEaHri4UA3KPAQQAGwCmAOh0gyaaTIMd26oQHpbMKWAAmeuKT3OgA)
+
+---
+
+### Avoid type assertions (`!.`)
+
+```typescript
+interface Baz {
+  baz: string;
+}
+
+const foo = (bar: string): Baz | null => null
+
+const qux = foo('bar');
+*console.log(qux!.baz);
+// Cannot read property 'baz' of null
+```
+
+[Playground](https://www.typescriptlang.org/play/index.html#code/JYOwLgpgTgZghgYwgAgEJwF7IN4ChnIBGmAXMgM5hSgDmA3LgL664ID2IlyMbbyAvMgAUxKGUrUQNAJRl0WAD7IQAVwA2agQD5l6tS3acwyAI4qAHgO68hAclG3pDQ+TZqIAOjVsaQs+YBCD2IMJ1wAenDkAGE4EBA2YygIOAATZAAHKDYM6DAAT2R7TFtkNhhdDSA)
+
+---
+
+### Avoid type assertions (`as`)
+
+```typescript
+interface Baz {
+  baz: string;
+}
+
+const foo = (bar: string): Baz | null => null
+
+const qux = foo('bar') as Baz;
+*console.log(qux.baz);
+// Cannot read property 'baz' of null
+```
+
+[Playground](https://www.typescriptlang.org/play/index.html#code/JYOwLgpgTgZghgYwgAgEJwF7IN4ChnIBGmAXMgM5hSgDmA3LgL664ID2IlyMbbyAvMgAUxKGUrUQNAJRl0WAD7IQAVwA2agQD5l6tS3acwyAI4qAHgO68hAclG3pyOOTSYGh8mzUQAdGrYaITNzX2IMaQYAeijkAGE4EBA2YygIOAATZAAHKDZs6DAAT2R7TFtkNhhdDSA)
+
+---
+
+### Use `unknown`
+
+```typescript
+interface Baz {
+  baz: string;
+}
+
+const foo = (bar: string): unknown => null
+
+const qux = foo('bar');
+*console.log(qux.baz);
+//          ~~~ Object is of type 'unknown'.
+```
+
+[Playground](https://www.typescriptlang.org/play/index.html?ssl=1&ssc=1&pln=14&pc=2#code/JYOwLgpgTgZghgYwgAgEJwF7IN4ChnIBGmAXMgM5hSgDmA3LgL664ID2IlyMbbyAvMgAUxKGUrUQNAJRkAriADWINgHcQAgHzDsRUsgDkxDAeSNpLdpzDIAjnIAeA7ryFG4UA9IZXybADYQAHT+bDRC9g5Bxt64APRxBEnJyAB+6cgA8oQAVhAINsDkyGwwyGAAngAOKAYKymogBkFAA)
+
+---
+
+### Use type guards
+
+```typescript
+interface Baz {
+  baz: string;
+}
+
+*function isBaz(obj: unknown): obj is Baz {
+* return (obj as Baz).baz !== undefined;
+*}
+
+const foo = (bar: string): unknown => ({ baz: 'baz' })
+
+const qux = foo('bar');
+*if (isBaz(qux)) {
+* console.log(qux.baz);
+*}
+```
+
+[Playground](https://www.typescriptlang.org/play/index.html#code/JYOwLgpgTgZghgYwgAgEJwF7IN4ChnIBGmAXMgM5hSgDmA3LgL664wCuICYwA9iMsHLoMACh6EAVmQ4BrEDwDuIAJRlxEgeTSYc+ZFAhg2UfmMnI4W4coB0xLAEIAvE+QcAJhBigI7hs1wEPkpkGB4eZFcRYigySmoQGlU3EDlFficAPmQRbCJSZABye0LkRmUWIJAQgEc2AA9I0PCRYrgoQuUGYBgcwWEROvrlZV0CKvIeABsIGymeGkGGu0wupiA)
+
+---
+
+### Use `strict: true`
+
+```javascript
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "strict": true,
+    // "noImplicitAny": true,
+    // "noImplicitThis": true,
+    // "alwaysStrict": true,
+    // "strictBindCallApply": true,
+    // "strictNullChecks": true,
+    // "strictFunctionTypes": true,
+    // "strictPropertyInitialization": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
+```
+
+---
+
+### Use `skipLibCheck: true`
+
+```javascript
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "skipLibCheck": true
+  }
+}
+```
+
+---
+
+### Use `importHelpers: true`
+
+```typescript
+// a.ts
+
+const foo = { bar: 'baz' };
+const qux = { ...foo };
+```
+
+```javascript
+// a.js
+
+*var __assign = (this && this.__assign) || function () {
+*  __assign = Object.assign || function(t) {
+*    for (var s, i = 1, n = arguments.length; i < n; i++) {
+*      s = arguments[i];
+*      for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+*        t[p] = s[p];
+*    }
+*    return t;
+*  };
+*  return __assign.apply(this, arguments);
+*};
+var foo = { bar: 'baz' };
+var qux = __assign({}, foo);
+```
+
+---
+
+```javascript
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "importHelpers": true
+  }
+}
+```
+
+```javascript
+// a.js
+
+*import { __assign } from "tslib";
+var foo = { bar: 'baz' };
+var qux = __assign({}, foo);
+```
+
+---
+
+### Use `module: "esnext"`
+
+```javascript
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "module": "esnext"
+  }
+}
+```
+
+> In order to take advantage of *tree shaking*, you must...
+>
+> * Use ES2015 module syntax (i.e. `import` and `export`).
+> * Ensure no compilers transform your ES2015 module syntax into CommonJS modules
+> * Add a `"sideEffects"` property to your project's `package.json` file.
+> * Use the `production` `mode` configuration option to enable various optimizations including minification and tree shaking.
+
+---
+
+### USe `esModuleInterop: true`
+
+```javascript
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "esModuleInterop": true
+  }
+}
+```
+
+```javascript
+// a.js
+module.exports = function () { /* ... */ };
+```
+
+```typescript
+// b.ts
+import a from './a';
+```
+
+---
+
+### Lint all the things
+
+```javascript
+// .eslintrc
+
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": { /* ... */ },
+  "plugins": ["react-hooks"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:jest/recommended",
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint",
+    "prettier/react",
+*   "plugin:@yammer/recommended"
+  ],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error"
+  }
+}
+```
+
+---
+
+## Hiring
+
+.emoji[🤷‍♂️]
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+    <script>
+      remark.highlighter.engine.registerLanguage("text", function() {
+        return {
+          contains: []
+        };
+      });
+
+      var slideshow = remark.create({
+        ratio: "16:9",
+        navigation: { scroll: false },
+        highlightLanguage: "no-highlight",
+        highlightStyle: "tomorrow-night",
+        highlightLines: true
+      });
+    </script>
+  </body>
+</html>
